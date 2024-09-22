@@ -9,44 +9,57 @@ import java.util.*;
 public class ProductService {
 
     private final Map<String, Product> productCatalog = new HashMap<>();
+    private final Object lock = new Object();
 
     public Product addProduct(String name, String description, double price, int quantityInStock) {
-        String id = UUID.randomUUID().toString();
-        Product product = new Product(id, name, description, price, quantityInStock);
-        productCatalog.put(id, product);
-        return product;
+        synchronized (lock) {
+            String id = UUID.randomUUID().toString();
+            Product product = new Product(id, name, description, price, quantityInStock);
+            productCatalog.put(id, product);
+            return product;
+        }
     }
 
     public Optional<Product> getProductById(String id) {
-        return Optional.ofNullable(productCatalog.get(id));
+        synchronized (lock) {
+            return Optional.ofNullable(productCatalog.get(id));
+        }
     }
 
     public List<Product> getAllProducts() {
-        return List.copyOf(productCatalog.values());
+        synchronized (lock) {
+            return List.copyOf(productCatalog.values());
+        }
     }
 
     public Product updateProduct(String id, String name, String description, double price, int quantityInStock) {
-        Product product = productCatalog.get(id);
-        if (product != null) {
-            product.setName(name);
-            product.setDescription(description);
-            product.setPrice(price);
-            product.setQuantityInStock(quantityInStock);
+        synchronized (lock) {
+            Product product = productCatalog.get(id);
+            if (product != null) {
+                product.setName(name);
+                product.setDescription(description);
+                product.setPrice(price);
+                product.setQuantityInStock(quantityInStock);
+            }
+            return product;
         }
-        return product;
     }
 
     public void reduceStock(String productId, int quantity) {
-        Product product = productCatalog.get(productId);
-        if (product != null && product.getQuantityInStock() >= quantity) {
-            product.setQuantityInStock(product.getQuantityInStock() - quantity);
+        synchronized (lock) {
+            Product product = productCatalog.get(productId);
+            if (product != null && product.getQuantityInStock() >= quantity) {
+                product.setQuantityInStock(product.getQuantityInStock() - quantity);
+            }
         }
     }
 
     public void deleteProduct(String id) {
-        if (!productCatalog.containsKey(id)) {
-            throw new IllegalArgumentException("Product with ID " + id + " does not exist.");
+        synchronized (lock) {
+            if (!productCatalog.containsKey(id)) {
+                throw new IllegalArgumentException("Product with ID " + id + " does not exist.");
+            }
+            productCatalog.remove(id);
         }
-        productCatalog.remove(id);
     }
 }
