@@ -24,23 +24,4 @@ public class ShoppingCart {
     public void updateProductQuantity(String productId, int quantity) {
         cartItems.computeIfPresent(productId, (key, oldQuantity) -> quantity);
     }
-
-    public double calculateTotalPriceOfShoppingCart(Map<String, Product> productCatalog) {
-//        return cartItems.entrySet()
-//                .stream()
-//                .mapToDouble(entry -> productCatalog.get(entry.getKey()).getPrice() * entry.getValue())
-//                .sum();
-        return cartItems.entrySet()
-                .stream()
-                .mapToDouble(entry -> {
-                    String productId = entry.getKey();
-                    int quantity = entry.getValue();
-                    Product product = productCatalog.get(productId); // Get the product from the catalog
-                    if (product != null) {
-                        return product.getPrice() * quantity;
-                    } else {
-                        throw new IllegalArgumentException("Product with ID " + productId + " not found in catalog");
-                    }
-                }).sum();
-    }
 }
