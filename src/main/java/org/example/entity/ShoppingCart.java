@@ -2,11 +2,13 @@ package org.example.entity;
 
 
 import lombok.Getter;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Getter
+@Component
 public class ShoppingCart {
 
     private final Map<String, Integer> cartItems = new HashMap<>();
@@ -20,9 +22,7 @@ public class ShoppingCart {
     }
 
     public void updateProductQuantity(String productId, int quantity) {
-        if (cartItems.containsKey(productId)) {
-            cartItems.put(productId, quantity);
-        }
+        cartItems.computeIfPresent(productId, (key, oldQuantity) -> quantity);
     }
 
     public double calculateTotalPriceOfShoppingCart(Map<String, Product> productCatalog) {

@@ -1,13 +1,12 @@
 package org.example.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.exception.OutOfStockException;
+import org.example.dto.ShoppingCartItemDto;
+import org.example.dto.TotalPriceDto;
 import org.example.service.ShoppingCartService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,28 +16,18 @@ public class ShoppingCartController {
     private final ShoppingCartService shoppingCartService;
 
     @PostMapping
-    public ResponseEntity<String> addToCart(@RequestParam String productId, @RequestParam int quantity) {
-        try {
-            shoppingCartService.addProductToCart(productId, quantity);
-            return ResponseEntity.ok("Product added to cart successfully");
-        } catch (OutOfStockException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+    public void addToCart(@RequestParam String productId, @RequestParam int quantity) {
+        shoppingCartService.addProductToCart(productId, quantity);
     }
 
     @GetMapping
-    public Map<String, Integer> getCartItems() {
+    public List<ShoppingCartItemDto> getCartItems() {
         return shoppingCartService.getCartItems();
     }
 
-    @PutMapping
-    public ResponseEntity<String> updateCartItem(@RequestParam String productId, @RequestParam int quantity) {
-        try {
-            shoppingCartService.updateProductQuantityInCart(productId, quantity);
-            return ResponseEntity.ok("Cart item updated successfully");
-        } catch (OutOfStockException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+    @PutMapping("/{id}/{quantity}")
+    public void updateCartItem(@PathVariable String id, @PathVariable int quantity) {
+        shoppingCartService.updateProductQuantityInCart(id, quantity);
     }
 
     @DeleteMapping("/{productId}")
@@ -47,7 +36,7 @@ public class ShoppingCartController {
     }
 
     @GetMapping("/total")
-    public double getTotalPrice() {
+    public TotalPriceDto getTotalPrice() {
         return shoppingCartService.getTotalPriceOfCart();
     }
 }

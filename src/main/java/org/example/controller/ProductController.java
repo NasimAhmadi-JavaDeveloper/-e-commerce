@@ -3,10 +3,10 @@ package org.example.controller;
 import lombok.RequiredArgsConstructor;
 import org.example.entity.Product;
 import org.example.service.ProductService;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
+import javax.validation.Valid;
 
 @RestController
 @RequiredArgsConstructor
@@ -16,27 +16,24 @@ public class ProductController {
     private final ProductService productService;
 
     @PostMapping
-    public Product addProduct(@RequestBody Product product) {
-        return productService.addProduct(product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getQuantityInStock());
+    public void addProduct(@RequestBody @Valid Product product) {
+        productService.addProduct(product);
     }
 
     @GetMapping
-    public List<Product> getAllProducts() {
-        return productService.getAllProducts();
+    public Page<Product> getAllProducts(@RequestParam(defaultValue = "0") int page,
+                                        @RequestParam(defaultValue = "10") int size) {
+        return productService.getAllProducts(page, size);
     }
 
     @GetMapping("/{id}")
-    public Optional<Product> getProduct(@PathVariable String id) {
+    public Product getProduct(@PathVariable String id) {
         return productService.getProductById(id);
     }
 
     @PutMapping
-    public Product updateProduct(@RequestBody Product product) {
-        return productService.updateProduct(product.getId(), product.getName(), product.getDescription(),
-                product.getPrice(), product.getQuantityInStock());
+    public void updateProduct(@RequestBody @Valid Product product) {
+        productService.updateProduct(product);
     }
 
     @DeleteMapping("/{id}")
