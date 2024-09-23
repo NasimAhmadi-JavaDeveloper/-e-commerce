@@ -8,7 +8,6 @@ import lombok.Setter;
 @Setter
 @RequiredArgsConstructor
 public class ShoppingCartItemDto {
-    private String productId;
     private int productQuantity;
     private String productName;
     private double productPrice;

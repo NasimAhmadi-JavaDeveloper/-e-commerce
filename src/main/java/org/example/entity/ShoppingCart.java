@@ -13,15 +13,17 @@ public class ShoppingCart {
 
     private final Map<String, Integer> cartItems = new HashMap<>();
 
-    public void addProduct(String productId, int quantity) {
-        cartItems.merge(productId, quantity, Integer::sum);
+    public void addProduct(String productName, int quantity) {
+        cartItems.merge(productName, quantity, Integer::sum);
     }
 
-    public void removeProduct(String productId) {
-        cartItems.remove(productId);
+    public void removeProduct(String productName) {
+        cartItems.remove(productName);
     }
 
-    public void updateProductQuantity(String productId, int quantity) {
-        cartItems.computeIfPresent(productId, (key, oldQuantity) -> quantity);
+    public void updateProductQuantity(String productName, int quantity) {
+        if (cartItems.containsKey(productName)) {
+            cartItems.put(productName, quantity);
+        }
     }
 }

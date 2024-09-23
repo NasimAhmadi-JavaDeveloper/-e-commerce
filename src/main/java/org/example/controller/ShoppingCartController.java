@@ -1,11 +1,13 @@
 package org.example.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.dto.ShoppingCartDto;
 import org.example.dto.ShoppingCartItemDto;
 import org.example.dto.TotalPriceDto;
 import org.example.service.ShoppingCartService;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -16,8 +18,8 @@ public class ShoppingCartController {
     private final ShoppingCartService shoppingCartService;
 
     @PostMapping
-    public void addToCart(@RequestParam String productId, @RequestParam int quantity) {
-        shoppingCartService.addProductToCart(productId, quantity);
+    public void addToCart(@RequestBody @Valid ShoppingCartDto dto) {
+        shoppingCartService.addProductToCart(dto);
     }
 
     @GetMapping
@@ -25,18 +27,18 @@ public class ShoppingCartController {
         return shoppingCartService.getCartItems();
     }
 
-    @PutMapping("/{id}/{quantity}")
-    public void updateCartItem(@PathVariable String id, @PathVariable int quantity) {
-        shoppingCartService.updateProductQuantityInCart(id, quantity);
+    @PutMapping
+    public void updateCartItem(@RequestBody @Valid ShoppingCartDto dto) {
+        shoppingCartService.updateProductQuantityInCart(dto);
     }
 
-    @DeleteMapping("/{productId}")
-    public void removeFromCart(@PathVariable String productId) {
-        shoppingCartService.removeProductFromCart(productId);
+    @DeleteMapping("/{productName}")
+    public void removeFromCart(@PathVariable String productName) {
+        shoppingCartService.removeProductFromCart(productName);
     }
 
     @GetMapping("/total")
-    public TotalPriceDto getTotalPrice() {
+    public TotalPriceDto getTotalPrice() { //todo
         return shoppingCartService.getTotalPriceOfCart();
     }
 }

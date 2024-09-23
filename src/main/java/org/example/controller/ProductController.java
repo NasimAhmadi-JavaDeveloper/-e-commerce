@@ -26,9 +26,9 @@ public class ProductController {
         return productService.getAllProducts(page, size);
     }
 
-    @GetMapping("/{id}")
-    public Product getProduct(@PathVariable String id) {
-        return productService.getProductById(id);
+    @GetMapping("/{productName}")
+    public Product getProduct(@PathVariable String productName) {
+        return productService.getProductByName(productName);
     }
 
     @PutMapping
@@ -36,8 +36,8 @@ public class ProductController {
         productService.updateProduct(product);
     }
 
-    @DeleteMapping("/{id}")
-    public void deleteProduct(@PathVariable String id) {
-        productService.deleteProduct(id);
+    @DeleteMapping("/{productName}")
+    public void deleteProduct(@PathVariable String productName) {
+        productService.deleteProduct(productName);
     }
 }

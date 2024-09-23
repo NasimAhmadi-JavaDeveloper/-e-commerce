@@ -1,6 +1,7 @@
 package org.example.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.dto.ShoppingCartDto;
 import org.example.dto.ShoppingCartItemDto;
 import org.example.dto.TotalPriceDto;
 import org.example.entity.Product;
@@ -23,32 +24,36 @@ public class ShoppingCartService {
     private final ShoppingCartMapper shoppingCartMapper;
 
     @Transactional
-    public void addProductToCart(String productId, int quantity) {
-        Product product = productService.getProductById(productId);
-
-        if (product.getQuantityInStock() < quantity) {
-            throw new OutOfStockException(String.format("Product '%s' is out of stock or insufficient quantity available.", product.getName()));
-        }
-
-        shoppingCart.addProduct(productId, quantity);
-        productService.reduceStock(productId, quantity);
+    public void addProductToCart(ShoppingCartDto dto) {
+        Product product = productService.getProductByName(dto.getProductName());
+        checkQuantityProductInStock(dto.getQuantity(), product.getQuantityInStock(), dto.getProductName());
+        shoppingCart.addProduct(dto.getProductName(), dto.getQuantity());
+        productService.reduceStock(dto.getProductName(), dto.getQuantity());
     }
 
-    public void removeProductFromCart(String productId) {
-        if (!shoppingCart.getCartItems().containsKey(productId)) {
-            throw new ProductNotFoundException(String.format("Product with ID %s is not in the shopping cart.", productId));
+    private static void checkQuantityProductInStock(int quantity, int quantityInStock, String productName) {
+        if (quantityInStock < quantity) {
+            throw new OutOfStockException(productName);
         }
-        shoppingCart.removeProduct(productId);
     }
 
-    public void updateProductQuantityInCart(String productId, int quantity) {
+    public void removeProductFromCart(String productName) {
+        if (!shoppingCart.getCartItems().containsKey(productName)) {
+            throw new ProductNotFoundException(productName);
+        }
+        shoppingCart.removeProduct(productName);
+    }
 
-        Product product = productService.getProductById(productId);
+    public void updateProductQuantityInCart(ShoppingCartDto dto) {
+        Product product = productService.getProductByName(dto.getProductName());
 
         if (product == null) {
-            throw new ProductNotFoundException((String.format("No product found with ID: %s.", productId)));
+            throw new ProductNotFoundException(dto.getProductName());
         }
-        shoppingCart.updateProductQuantity(productId, quantity);
+
+        checkQuantityProductInStock(dto.getQuantity(), product.getQuantityInStock(), product.getName());
+        shoppingCart.updateProductQuantity(dto.getProductName(), dto.getQuantity());
+        productService.reduceStock(dto.getProductName(), dto.getQuantity());
     }
 
     public List<ShoppingCartItemDto> getCartItems() {
@@ -56,9 +61,9 @@ public class ShoppingCartService {
                 .entrySet()
                 .stream()
                 .map(entry -> {
-                    String productId = entry.getKey();
+                    String productName = entry.getKey();
                     int quantity = entry.getValue();
-                    Product product = productService.getProductById(productId);
+                    Product product = productService.getProductByName(productName);
                     return shoppingCartMapper.toDto(product, quantity);
                 })
                 .collect(Collectors.toList());

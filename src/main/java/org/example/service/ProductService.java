@@ -20,23 +20,24 @@ public class ProductService {
 
     public void addProduct(Product product) {
         synchronized (lock) {
-
-            if (productCatalog.values()
-                    .stream()
-                    .anyMatch(p -> p.getName().equalsIgnoreCase(product.getName()))) {
-                throw new DuplicateProductNameException("Product with the same name already exists.");
-            }
-
-            String id = UUID.randomUUID().toString();
-            productCatalog.put(id, product);
+            checkUniqueProductName(product.getName());
+            productCatalog.put(product.getName(), product);
         }
     }
 
-    public Product getProductById(String id) {
+    private void checkUniqueProductName(String productName) {
+        if (productCatalog.values()
+                .stream()
+                .anyMatch(p -> p.getName().equalsIgnoreCase(productName))) {
+            throw new DuplicateProductNameException(productName);
+        }
+    }
+
+    public Product getProductByName(String productName) {
         synchronized (lock) {
-            Product product = productCatalog.get(id);
+            Product product = productCatalog.get(productName);
             if (product == null) {
-                throw new ProductNotFoundException(String.format("Product with ID %s not found.", id));
+                throw new ProductNotFoundException(productName);
             }
             return product;
         }
@@ -55,34 +56,33 @@ public class ProductService {
 
     public void updateProduct(Product product) {
         synchronized (lock) {
-            Product entity = productCatalog.get(product.getId());
+            Product entity = productCatalog.get(product.getName());
 
             if (entity == null) {
-                throw new ProductNotFoundException((String.format("No product found with ID: %s.", product.getId())));
+                throw new ProductNotFoundException(product.getName());
             }
-
-            entity.setName(product.getName());
+            checkUniqueProductName(product.getName());
             entity.setDescription(product.getDescription());
             entity.setPrice(product.getPrice());
             entity.setQuantityInStock(product.getQuantityInStock());
         }
     }
 
-    public void reduceStock(String productId, int quantity) {
+    public void reduceStock(String productName, int quantity) {
         synchronized (lock) {
-            Product product = productCatalog.get(productId);
+            Product product = productCatalog.get(productName);
             if (product != null && product.getQuantityInStock() >= quantity) {
                 product.setQuantityInStock(product.getQuantityInStock() - quantity);
             }
         }
     }
 
-    public void deleteProduct(String id) {
+    public void deleteProduct(String productName) {
         synchronized (lock) {
-            if (!productCatalog.containsKey(id)) {
-                throw new ProductNotFoundException((String.format("No product found with ID: %s.", id)));
+            if (!productCatalog.containsKey(productName)) {
+                throw new ProductNotFoundException(productName);
             }
-            productCatalog.remove(id);
+            productCatalog.remove(productName);
         }
     }
 

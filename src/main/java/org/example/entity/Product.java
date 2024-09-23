@@ -14,7 +14,6 @@ import javax.validation.constraints.PositiveOrZero;
 @AllArgsConstructor
 @Accessors(chain = true)
 public class Product {
-    private String id;
     @NotBlank(message = "Product name is required")
     private String name;
     @NotBlank(message = "Product description is required")
