@@ -16,6 +16,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,13 +27,27 @@ public class ShoppingCartService {
     private final ShoppingCart shoppingCart;
     private final ProductService productService;
     private final ShoppingCartMapper shoppingCartMapper;
+    private final ReentrantLock lock = new ReentrantLock();
 
     @Transactional
     public void addProductToCart(ShoppingCartDto dto) {
-        Product product = productService.getProductByName(dto.getProductName());
-        checkQuantityProductInStock(dto.getQuantity(), product.getQuantityInStock(), dto.getProductName());
-        shoppingCart.addProduct(dto.getProductName(), dto.getQuantity());
-        productService.reduceStock(dto.getProductName(), dto.getQuantity());
+        try {
+            if (lock.tryLock(2, TimeUnit.SECONDS)) {
+                Product product = productService.getProductByName(dto.getProductName());
+                checkQuantityProductInStock(dto.getQuantity(), product.getQuantityInStock(), dto.getProductName());
+                shoppingCart.addProduct(dto.getProductName(), dto.getQuantity());
+                productService.reduceStock(dto.getProductName(), dto.getQuantity());
+            } else {
+                throw new RuntimeException("Could not acquire lock to add product to cart.");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Restore interrupted state
+            throw new RuntimeException("Thread was interrupted while trying to acquire lock.", e);
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
     }
 
     private static void checkQuantityProductInStock(int quantity, int quantityInStock, String productName) {
@@ -48,15 +64,27 @@ public class ShoppingCartService {
     }
 
     public void updateProductQuantityInCart(ShoppingCartDto dto) {
-        Product product = productService.getProductByName(dto.getProductName());
+        try {
+            if (lock.tryLock(2, TimeUnit.SECONDS)) {
+                Product product = productService.getProductByName(dto.getProductName());
 
-        if (product == null) {
-            throw new ProductNotFoundException(dto.getProductName());
+                if (product == null) {
+                    throw new ProductNotFoundException(dto.getProductName());
+                }
+                checkQuantityProductInStock(dto.getQuantity(), product.getQuantityInStock(), product.getName());
+                shoppingCart.updateProductQuantity(dto.getProductName(), dto.getQuantity());
+                productService.reduceStock(dto.getProductName(), dto.getQuantity());
+
+            } else {
+                throw new RuntimeException("Could not acquire lock to update product quantity in cart.");
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
-
-        checkQuantityProductInStock(dto.getQuantity(), product.getQuantityInStock(), product.getName());
-        shoppingCart.updateProductQuantity(dto.getProductName(), dto.getQuantity());
-        productService.reduceStock(dto.getProductName(), dto.getQuantity());
     }
 
     public List<ShoppingCartItemDto> getCartItems() {
