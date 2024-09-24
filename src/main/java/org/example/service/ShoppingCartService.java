@@ -12,7 +12,10 @@ import org.example.mapper.ShoppingCartMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -70,6 +73,20 @@ public class ShoppingCartService {
     }
 
     public TotalPriceDto getTotalPriceOfCart() {
-        return shoppingCartMapper.mapTotalPriceDto(productService.getSumOfProductPrice());
+        Set<String> productNames = shoppingCart.getCartItems().keySet();
+        List<Product> productsInCart = productService.getAllByName(productNames);
+
+        if (productsInCart.isEmpty()) {
+            return shoppingCartMapper.mapTotalPriceDto(BigDecimal.ZERO.setScale(2, RoundingMode.UP));
+        }
+
+        double sum = productsInCart.stream()
+                .mapToDouble(Product::getPrice)
+                .sum();
+
+        BigDecimal roundedTotal = BigDecimal.valueOf(sum).setScale(2, RoundingMode.UP);
+        return shoppingCartMapper.mapTotalPriceDto(roundedTotal);
     }
+
+
 }

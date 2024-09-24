@@ -11,22 +11,22 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
 
-    private final Map<String, Product> productCatalog = new HashMap<>();
-    private final Object lock = new Object();
+    private static final Map<String, Product> PRODUCT_CATALOG = new HashMap<>();
 
     public void addProduct(Product product) {
-        synchronized (lock) {
+        synchronized (PRODUCT_CATALOG) {
             checkUniqueProductName(product.getName());
-            productCatalog.put(product.getName(), product);
+            PRODUCT_CATALOG.put(product.getName(), product);
         }
     }
 
     private void checkUniqueProductName(String productName) {
-        if (productCatalog.values()
+        if (PRODUCT_CATALOG.values()
                 .stream()
                 .anyMatch(p -> p.getName().equalsIgnoreCase(productName))) {
             throw new DuplicateProductNameException(productName);
@@ -34,8 +34,8 @@ public class ProductService {
     }
 
     public Product getProductByName(String productName) {
-        synchronized (lock) {
-            Product product = productCatalog.get(productName);
+        synchronized (PRODUCT_CATALOG) {
+            Product product = PRODUCT_CATALOG.get(productName);
             if (product == null) {
                 throw new ProductNotFoundException(productName);
             }
@@ -44,19 +44,17 @@ public class ProductService {
     }
 
     public Page<Product> getAllProducts(int page, int size) {
-        synchronized (lock) {
-            List<Product> products = new ArrayList<>(productCatalog.values());
-            int total = products.size();
-            int start = Math.min(page * size, total);
-            int end = Math.min(start + size, total);
-            List<Product> paginatedList = products.subList(start, end);
-            return new PageImpl<>(paginatedList, PageRequest.of(page, size), total);
-        }
+        List<Product> products = new ArrayList<>(PRODUCT_CATALOG.values());
+        int total = products.size();
+        int start = Math.min(page * size, total);
+        int end = Math.min(start + size, total);
+        List<Product> paginatedList = products.subList(start, end);
+        return new PageImpl<>(paginatedList, PageRequest.of(page, size), total);
     }
 
     public void updateProduct(Product product) {
-        synchronized (lock) {
-            Product entity = productCatalog.get(product.getName());
+        synchronized (PRODUCT_CATALOG) {
+            Product entity = PRODUCT_CATALOG.get(product.getName());
 
             if (entity == null) {
                 throw new ProductNotFoundException(product.getName());
@@ -69,8 +67,8 @@ public class ProductService {
     }
 
     public void reduceStock(String productName, int quantity) {
-        synchronized (lock) {
-            Product product = productCatalog.get(productName);
+        synchronized (PRODUCT_CATALOG) {
+            Product product = PRODUCT_CATALOG.get(productName);
             if (product != null && product.getQuantityInStock() >= quantity) {
                 product.setQuantityInStock(product.getQuantityInStock() - quantity);
             }
@@ -78,21 +76,32 @@ public class ProductService {
     }
 
     public void deleteProduct(String productName) {
-        synchronized (lock) {
-            if (!productCatalog.containsKey(productName)) {
+        synchronized (PRODUCT_CATALOG) {
+            if (!PRODUCT_CATALOG.containsKey(productName)) {
                 throw new ProductNotFoundException(productName);
             }
-            productCatalog.remove(productName);
+            PRODUCT_CATALOG.remove(productName);
         }
     }
 
     public BigDecimal getSumOfProductPrice() {
-        double sum = productCatalog.values()
+        double sum = PRODUCT_CATALOG.values()
                 .stream()
                 .mapToDouble(Product::getPrice)
                 .sum();
 
         return BigDecimal.valueOf(sum)
                 .setScale(2, RoundingMode.UP);
+    }
+
+    public List<Product> getAllByName(Set<String> productNames) {
+        if (productNames == null) {
+            return new ArrayList<>();
+        }
+
+        return PRODUCT_CATALOG.values()
+                .stream()
+                .filter(product -> productNames.contains(product.getName()))
+                .collect(Collectors.toList());
     }
 }

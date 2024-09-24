@@ -38,7 +38,7 @@ public class ShoppingCartController {
     }
 
     @GetMapping("/total")
-    public TotalPriceDto getTotalPrice() { //todo
+    public TotalPriceDto getTotalPrice() {
         return shoppingCartService.getTotalPriceOfCart();
     }
 }
