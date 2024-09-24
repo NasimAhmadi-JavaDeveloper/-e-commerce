@@ -8,8 +8,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -82,16 +80,6 @@ public class ProductService {
             }
             PRODUCT_CATALOG.remove(productName);
         }
-    }
-
-    public BigDecimal getSumOfProductPrice() {
-        double sum = PRODUCT_CATALOG.values()
-                .stream()
-                .mapToDouble(Product::getPrice)
-                .sum();
-
-        return BigDecimal.valueOf(sum)
-                .setScale(2, RoundingMode.UP);
     }
 
     public List<Product> getAllByName(Set<String> productNames) {
