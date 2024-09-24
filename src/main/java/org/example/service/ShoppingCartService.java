@@ -11,6 +11,7 @@ import org.example.exception.ProductNotFoundException;
 import org.example.mapper.ShoppingCartMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -102,12 +103,12 @@ public class ShoppingCartService {
 
     public TotalPriceDto getTotalPriceOfCart() {
         Set<String> productNames = shoppingCart.getCartItems().keySet();
-        List<Product> productsInCart = productService.getAllByName(productNames);
 
-        if (productsInCart.isEmpty()) {
-            return shoppingCartMapper.mapTotalPriceDto(BigDecimal.ZERO.setScale(2, RoundingMode.UP));
+        if (CollectionUtils.isEmpty(productNames)) {
+            return shoppingCartMapper.mapTotalPriceDto(BigDecimal.ZERO.setScale(2, RoundingMode.UP)); //fail-safe
         }
 
+        List<Product> productsInCart = productService.getAllByName(productNames);
         double sum = productsInCart.stream()
                 .mapToDouble(Product::getPrice)
                 .sum();

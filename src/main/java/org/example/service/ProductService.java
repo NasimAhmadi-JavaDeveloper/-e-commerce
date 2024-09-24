@@ -82,11 +82,7 @@ public class ProductService {
         }
     }
 
-    public List<Product> getAllByName(Set<String> productNames) {
-        if (productNames == null) {
-            return new ArrayList<>();
-        }
-
+    public List<Product> getAllByName(Collection<String> productNames) {
         return PRODUCT_CATALOG.values()
                 .stream()
                 .filter(product -> productNames.contains(product.getName()))
